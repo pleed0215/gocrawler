@@ -34,7 +34,7 @@ func getPages() int {
 	checkError(err)
 	checkCode(res.StatusCode)
 
-	doc, err := goquery.NewDocumentFromRead(res.Body)
+	doc, err := goquery.NewDocumentFromReader(res.Body)
 	fmt.Println(doc)
 	return 0
 }
