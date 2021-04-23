@@ -18,6 +18,7 @@ func main() {
 	} else {
 		fmt.Println(err)
 	}
+	getPages()
 }
 
 func getJobUrl(job string, page int) (string, error) {
@@ -30,12 +31,20 @@ func getJobUrl(job string, page int) (string, error) {
 }
 
 func getPages() int {
-	res, err := http.Get(baseUrl)
+	url, _ := getJobUrl("python", 1)
+	res, err := http.Get(url)
 	checkError(err)
-	checkCode(res.StatusCode)
+	checkCode(res)
+
+	defer res.Body.Close()
 
 	doc, err := goquery.NewDocumentFromReader(res.Body)
-	fmt.Println(doc)
+	checkError(err)
+
+	doc.Find(".pagination").Each( func(i int, s *goquery.Selection) {
+		fmt.Println(s.Find("span").Text()) 
+	})
+
 	return 0
 }
 
@@ -45,8 +54,8 @@ func checkError(err error) {
 	}
 }
 
-func checkCode(code int) {
-	if code != 200 {
-		log.Fatalln("fail to connect")
+func checkCode(res *http.Response) {
+	if res.StatusCode != 200 {
+		log.Fatalln("fail to connect. ", "Code: ", res.StatusCode, "Status: ", res.Status)
 	}
 }
