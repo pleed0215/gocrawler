@@ -3,6 +3,9 @@
 github.com/PuerkitoBio/goquery
 # github.com/andybalholm/cascadia v1.1.0
 github.com/andybalholm/cascadia
+# github.com/tsak/concurrent-csv-writer v1.0.0
+## explicit
+github.com/tsak/concurrent-csv-writer
 # golang.org/x/net v0.0.0-20200202094626-16171245cfb2
 golang.org/x/net/html
 golang.org/x/net/html/atom

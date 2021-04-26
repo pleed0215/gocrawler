@@ -1,18 +1,16 @@
 package main
 
 import (
-	"bufio"
-	"encoding/csv"
 	"errors"
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
+	ccsv "github.com/tsak/concurrent-csv-writer"
 )
 
 const baseUrl string = "https://kr.indeed.com/jobs"
@@ -119,7 +117,7 @@ func moreTrimSpace(str string) string {
 	return strings.Join(strings.Fields(strings.TrimSpace(str)), " ")
 }
 
-func getJobs(job string, page int, c chan [] Job)  {
+func getJobs(job string, page int, c chan <- [] Job)  {
 	url, _ := getJobUrl(job, page)
 	fmt.Println("Job Scrapping [", job, "] ", "Page: ", page)
 	var jobs = make([] Job, 0, PAGE_SIZE);
@@ -159,21 +157,39 @@ func saveToCsv(jobs [] Job, filename string) error {
 		}
 	}
 
-	file, err := os.Create("./"+toSaveFilename)
+	
+	
+	csvWriter, err := ccsv.NewCsvWriter(toSaveFilename)
+	// saveToCsv 종료 시 파일에 데이터 입력
 	if err != nil {
 		panic(err) // 파일 못 만들어? 그럼 종료.
 	}
-	writer := csv.NewWriter(bufio.NewWriter(file))
-	defer writer.Flush()
+	defer csvWriter.Close();
 
-	writer.Write([] string{"Title", "Location", "Company", "Summary"})
+	done := make(chan interface{})
+
+	// CSV 헤더 입력
+	csvWriter.Write([] string{"Title", "Location", "Company", "Summary"})
 	
+	// CSV 데이터 입력
 	for _, job := range jobs {
-		err := writer.Write([] string{job.title, job.location, job.company, job.summary})
-		checkError(err)
+		go func(job Job) {
+			err := csvWriter.Write([] string{job.title, job.location, job.company, job.summary})
+			if err != nil {
+				done <- job
+			} else {
+				done <- nil
+			}
+		}(job)
 	}
 
-	
+	for i:=0 ; i<len(jobs) ; i++ {
+		result := <-done
+		if result != nil {
+			fmt.Println("There was an error while saving: ", result)
+		}
+	}
 
+	// 끗. 에러 없음.
 	return nil
 }
